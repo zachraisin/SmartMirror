@@ -1,0 +1,16 @@
+Flask
+Flask-Login
+Flask-WTF
+face-recognition
+gunicorn
+python-dotenv
+google-api-python-client
+oauthlib
+requests
+numpy
+Flask-Session
+google-auth
+google-auth-oauthlib
+google-api-python-client
+requests
+

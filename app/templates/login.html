@@ -1,0 +1,42 @@
+<!-- app/templates/login.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login with Camera</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="{{ url_for('static', filename='js/camera.js') }}" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div id="camera-container">
+            <video id="video" width="100%" autoplay></video>
+            <button id="capture-button">Capture</button>
+            <canvas id="canvas" style="display: none;"></canvas>
+        </div>
+        
+        <form id="login-form" method="POST" style="display: none;">
+            <input type="hidden" name="image" id="image-data">
+            <input type="submit" value="Login">
+        </form>
+        
+        <div class="nav-links">
+            <a href="{{ url_for('main.index') }}">Back to Home</a>
+        </div>
+    </div>
+</body>
+</html>

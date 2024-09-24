@@ -1,0 +1,19 @@
+<!-- app/templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Mirror Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Smart Mirror</h1>
+        <div class="nav-links">
+            <a href="{{ url_for('main.register') }}">Register</a> | 
+            <a href="{{ url_for('main.login') }}">Login</a>
+        </div>
+    </div>
+</body>
+</html>
