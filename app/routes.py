@@ -1,6 +1,4 @@
-# app/routes.py
-
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app, jsonify
 from werkzeug.utils import secure_filename
 import face_recognition
 import os
@@ -11,11 +9,53 @@ from .utils import load_users, save_user, find_user_by_encoding
 import base64
 from io import BytesIO
 from PIL import Image
+import requests  # Import requests for the weather API
 
 main = Blueprint('main', __name__)
 UPLOAD_FOLDER = 'uploads/'
 ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif'}
 USERS_FILE = os.path.join(os.path.dirname(__file__), 'users.json')
+
+# Key for swell forecast API
+SurfFOR_API ="8e6bc43c-e89b-11ed-92e6-0242ac130002-8e6bc4a0-e89b-11ed-92e6-0242ac130002"
+
+# Your OpenWeatherMap API key
+API_KEY = 'f3337f70ad27b09a847fe7856d3ceaaf'
+
+# retrieve swell of user input location
+def swell(lat, lng, key):
+    import arrow
+    import requests
+
+    # Get first hour of today
+    start = arrow.now().floor('day')
+
+    # Get last hour of today
+    end = arrow.now().ceil('day')
+
+    response = requests.get(
+    'https://api.stormglass.io/v2/weather/point',
+    params={
+        'lat': lat,
+        'lng': lng,
+        'params': ','.join(['waveHeight', 'waterTemperature']),
+        'start': start.to('UTC').timestamp(),  # Convert to UTC timestamp
+        'end': end.to('UTC').timestamp()  # Convert to UTC timestamp
+    },
+    headers={
+        'Authorization': key
+    }
+    )
+
+    json_data= response.json()
+        
+    # Get the first entry in the dictionary
+    first_entry = json_data['hours'][0]
+    
+    # Extract the waveHeight
+    height_swell = first_entry['waveHeight']['sg']
+    
+    return height_swell
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -102,9 +142,41 @@ def dashboard():
     if 'username' not in session:
         flash('Please log in first.', 'warning')
         return redirect(url_for('main.login'))
+    
     username = session['username']
+    
+    data = request.get_json()
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+    swell(latitude, longitude, SurfFOR_API)
+    
     return render_template('dashboard.html', username=username)
 
+# Route to fetch weather data based on user's geolocation
+@main.route('/get_weather', methods=['POST'])
+def get_weather():
+    data = request.get_json()
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    if latitude and longitude:
+        # Fetch weather data using latitude and longitude
+        weather_url = f"http://api.openweathermap.org/data/2.5/weather?lat={latitude}&lon={longitude}&appid={API_KEY}&units=metric"
+        response = requests.get(weather_url)
+        
+        if response.status_code == 200:
+            weather_data = response.json()
+            # Extract relevant weather information
+            weather = {
+                'temperature': weather_data['main']['temp'],
+                'description': weather_data['weather'][0]['description'].capitalize(),
+                'city': weather_data['name']
+            }
+            return jsonify(success=True, temperature=weather['temperature'], description=weather['description'], city=weather['city'])
+        else:
+            return jsonify(success=False), 500
+    else:
+        return jsonify(success=False), 400
 
 @main.route('/logout')
 def logout():
