@@ -1,16 +1,15 @@
-<!-- app/templates/dashboard.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 <body>
-    <div class="container dashboard">
-        <h1>Dashboard</h1>
-        
+    <div class="container">
+        <h1>Welcome to Your Dashboard, {{ username }}!</h1>
+
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -21,13 +20,89 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
-        
-        <p>Welcome, {{ username }}!</p>
-        <p>You have successfully logged in.</p>
-        
+
+        <p>This is your personalized dashboard page in black and white.</p>
+
+        <!-- Weather Information Section -->
+        <div id="weather">
+            <p>Fetching weather data...</p>
+        </div>
+
+        <!-- Logout button -->
         <form action="{{ url_for('main.logout') }}" method="GET">
-            <button type="submit" class="logout-button">Logout</button>
+            <button type="submit">Logout</button>
         </form>
     </div>
+
+    <div class="section">
+        <h2>Swell Forecast</h2>
+        <ul>
+            <p>Current Surf Conditions: {{Swell}}<br>
+            </p>
+        </ul>
+    </div>
+
+    <!-- JavaScript to get the user's geolocation and display weather -->
+    <script>
+        function getLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(sendPositionToServer, showError);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function sendPositionToServer(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            fetch('/get_weather', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('weather').innerHTML = `
+                        <h2>Current Weather in ${data.city}:</h2>
+                        <p>Temperature: ${data.temperature}°C</p>
+                        <p>Condition: ${data.description}</p>
+                    `;
+                } else {
+                    document.getElementById('weather').innerHTML = `<p>Unable to fetch weather data.</p>`;
+                }
+            })
+            .catch(error => {
+                console.error("Error fetching weather:", error);
+                document.getElementById('weather').innerHTML = `<p>Unable to fetch weather data.</p>`;
+            });
+        }
+
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    alert("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    alert("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    alert("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    alert("An unknown error occurred.");
+                    break;
+            }
+        }
+
+        // Get location as soon as the page loads
+        window.onload = getLocation;
+    </script>
 </body>
 </html>
